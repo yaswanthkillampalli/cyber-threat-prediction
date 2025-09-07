@@ -1,0 +1,53 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs
+*.log
+*.log.*
+*.out
+*.err
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Frontend specific (React/Vue/Angular etc.)
+*.cache
+.cache/
+coverage/
+*.tsbuildinfo
+
+# Backend specific
+.tmp/
+*.pid
+*.seed
+*.pid.lock
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Other
+*.tgz
+*.zip
+*.tar.gz
