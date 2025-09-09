@@ -42,7 +42,7 @@ export default function PacketAnalysis({ data = {} }) {
             <Card.Body>
               <Card.Title>Average Packet Size by Traffic Type</Card.Title>
               {/* This chart will also render safely now */}
-              <SimpleBarChart data={packetSizeDataForBarChart} />
+              <SimpleBarChart data={data.packetSizeBreakdown} />
               <hr />
               <Card.Text as="div">
                 <strong>Interpretation:</strong> Packet sizes can reveal the intent of the traffic.

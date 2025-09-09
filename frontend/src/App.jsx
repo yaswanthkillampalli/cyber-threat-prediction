@@ -1,5 +1,3 @@
-// src/App.jsx
-
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import DateRangeModal from "./components/DateRangeModal";
@@ -12,7 +10,7 @@ import Settings from "./components/Settings";
 import { BounceLoader } from "react-spinners";
 import './App.css';
 
-const API_BASE_URL = 'https://cyber-backend.yashdev.tech';
+const API_BASE_URL = 'http://localhost:8000';
 
 function App() {
   const [selectedTab, setSelectedTab] = useState("0");

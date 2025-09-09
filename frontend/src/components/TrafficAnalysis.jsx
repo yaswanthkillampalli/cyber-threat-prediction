@@ -17,7 +17,7 @@ export default function TrafficAnalysis({ data }) {
           <Card>
             <Card.Body>
               <Card.Title>Traffic Volume (Last Hour)</Card.Title>
-              <SimpleAreaChart data={data.trafficOverTime} />
+              <SimpleAreaChart data={data.trafficVolumeOverTime} />
             </Card.Body>
           </Card>
         </Col>
