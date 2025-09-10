@@ -2,7 +2,17 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-export default function StackedBarChart({ data = [] }) {
+const defaultData = [
+  { name: 'Jan', sent: 400, received: 240 },
+  { name: 'Feb', sent: 300, received: 139 },
+  { name: 'Mar', sent: 200, received: 980 },
+  { name: 'Apr', sent: 278, received: 390 },
+  { name: 'May', sent: 189, received: 480 },
+  { name: 'Jun', sent: 239, received: 380 },
+  { name: 'Jul', sent: 349, received: 430 },
+];
+
+export default function StackedBarChart({ data }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>

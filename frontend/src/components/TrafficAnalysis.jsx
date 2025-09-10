@@ -17,7 +17,7 @@ export default function TrafficAnalysis({ data }) {
           <Card>
             <Card.Body>
               <Card.Title>Traffic Volume (Last Hour)</Card.Title>
-              <SimpleAreaChart data={data.trafficVolumeOverTime} />
+              <SimpleAreaChart data={data.trafficVolume} />
             </Card.Body>
           </Card>
         </Col>
@@ -35,7 +35,7 @@ export default function TrafficAnalysis({ data }) {
           <Card className="mb-4">
             <Card.Body>
               <Card.Title>Data Sent vs. Received by Traffic Type</Card.Title>
-              <StackedBarChart data={data.dataVolume} />
+              <StackedBarChart data={data.sentReceived} />
             </Card.Body>
           </Card>
           <Card>

@@ -2,7 +2,16 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-export default function SimpleBarChart({ data = [] }) {
+const defaultData = [
+  { name: 'SQL Injection', count: 400 },
+  { name: 'DDoS', count: 300 },
+  { name: 'Bruteforce', count: 200 },
+  { name: 'Bot', count: 278 },
+  { name: 'Infiltration', count: 189 },
+  { name: 'Normal', count: 239 },
+];
+
+export default function SimpleBarChart({ data }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} layout="vertical" margin={{ left: 20 }}>

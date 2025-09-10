@@ -41,7 +41,7 @@ app.get('/reports/recent', async (req, res) => {
             .from('network_flows')
             .select('*')
             .gte('created_at', twentyFourHoursAgo)
-            .limit(500000);
+            .limit(2000);
 
         if (error) throw error;
         if (!data || data.length === 0) return res.json({ message: "No data found for the last 24 hours." });
