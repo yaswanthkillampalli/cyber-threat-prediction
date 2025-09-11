@@ -41,7 +41,7 @@ app.get('/reports/recent', async (req, res) => {
             .from('network_flows')
             .select('*')
             .gte('created_at', twentyFourHoursAgo)
-            .limit(2000);
+            .limit(10000);
 
         if (error) throw error;
         if (!data || data.length === 0) return res.json({ message: "No data found for the last 24 hours." });
@@ -66,7 +66,7 @@ app.get('/reports/custom', async (req, res) => {
             .select('*')
             .gte('created_at', new Date(start).toISOString())
             .lte('created_at', new Date(end).toISOString())
-            .limit(50000);
+            .limit(10000);
 
         if (error) throw error;
         if (!data || data.length === 0) {
