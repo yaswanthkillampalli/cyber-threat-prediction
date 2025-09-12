@@ -12,7 +12,7 @@ const dashboardTabs = [
   { eventKey: "2", label: "Behavior Analysis" },
   { eventKey: "3", label: "Packet Analysis" },
   { eventKey: "4", label: "CSV Analysis" },
-  // { eventKey: "5", label: "Settings" },
+  { eventKey: "5", label: "Api Analysis" },
 ];
 
 export default function Header({ selectedTab, onChange, onDateRangeClick, reportDateRange}) {

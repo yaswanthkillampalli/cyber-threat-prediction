@@ -1,13 +1,9 @@
-
-
-// 1. Install react-spinners: npm install react-spinners
-// 2. Import the spinner
+import { useState, useMemo } from 'react';
+import { Container, Row, Col, Card, Table, Alert, Button, Form } from 'react-bootstrap';
 import { BounceLoader } from 'react-spinners';
-import { useState, useCallback, useMemo } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Container, Row, Col, Card, Table, Alert, Button } from 'react-bootstrap';
 
-// Reusable charts (assumed existing)
+// --- ASSUMED CHART IMPORTS ---
+// Make sure you have these chart components created and imported from their correct paths.
 import ThreatLevelGauge from '../charts/ThreatLevelGauge';
 import SimpleLineChart from '../charts/SimpleLineChart';
 import SimpleAreaChart from '../charts/SimpleAreaChart';
@@ -18,26 +14,6 @@ import SimpleRadarChart from '../charts/SimpleRadarChart';
 import ScatterPlot from '../charts/ScatterPlot';
 
 // --- STYLES ---
-
-// Dropzone styles
-const baseStyle = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '40px',
-  border: '2px dashed #007bff',
-  borderRadius: '0.375rem',
-  backgroundColor: '#f8f9fa',
-  color: '#6c757d',
-  transition: 'border .24s ease-in-out',
-  cursor: 'pointer'
-};
-const activeStyle = {
-  borderColor: '#0b5ed7'
-};
-
-// NEW: Style for the full-screen loading overlay
 const overlayStyle = {
   position: 'fixed',
   top: 0,
@@ -46,15 +22,16 @@ const overlayStyle = {
   bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.7)',
   display: 'flex',
-  flexDirection: 'column', // To stack spinner and text
+  flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
   zIndex: 9999,
   color: 'white'
 };
 
-export default function CSVAnalysis() {
-  const [file, setFile] = useState(null);
+export default function ApiAnalysis() {
+  const [apiUrl, setApiUrl] = useState('');
+  const [isUrlSubmitted, setIsUrlSubmitted] = useState(false);
   const [status, setStatus] = useState({ type: 'idle', message: '' }); // idle | uploading | success | error
 
   // Server-returned data
@@ -63,24 +40,6 @@ export default function CSVAnalysis() {
   const [behaviourData, setBehaviourData] = useState(null);
   const [packetData, setPacketData] = useState(null);
 
-  const onDrop = useCallback((acceptedFiles) => {
-    if (!acceptedFiles?.length) return;
-    const uploadedFile = acceptedFiles[0];
-    if (uploadedFile.type !== 'text/csv' && !uploadedFile.name?.toLowerCase().endsWith('.csv')) {
-      setStatus({ type: 'error', message: 'Invalid file type. Please upload a CSV file.' });
-      return;
-    }
-    setFile(uploadedFile);
-    setStatus({ type: 'idle', message: '' });
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    multiple: false,
-    accept: { 'text/csv': ['.csv'] }
-  });
-
-  // ... (useMemo hooks for data safety remain unchanged)
   // Coercers to prevent NaN in charts
   const safeThreatBreakdown = useMemo(
     () => (dashboardData?.threatBreakdown || []).map(d => ({ ...d, value: Number(d.value) || 0 })),
@@ -149,7 +108,8 @@ export default function CSVAnalysis() {
   }), [behaviourData]);
 
   const resetAll = () => {
-    setFile(null);
+    setApiUrl('');
+    setIsUrlSubmitted(false);
     setDashboardData(null);
     setTrafficData(null);
     setBehaviourData(null);
@@ -157,17 +117,32 @@ export default function CSVAnalysis() {
     setStatus({ type: 'idle', message: '' });
   };
 
+  const handleUrlSubmit = (e) => {
+    e.preventDefault();
+    if (apiUrl.trim()) {
+      setIsUrlSubmitted(true);
+      setStatus({ type: 'idle', message: '' });
+    } else {
+        setStatus({ type: 'error', message: 'Please enter a valid API URL.'})
+    }
+  };
+
   const uploadToBackend = async () => {
-    if (!file) return;
+    if (!apiUrl || !isUrlSubmitted) return;
+
     try {
-      setStatus({ type: 'uploading', message: 'Uploading CSV for analysis...' });
-      const formData = new FormData();
-      formData.append('csvfile', file);
-      const res = await fetch('http://localhost:8000/analyze/csv', {
+      setStatus({ type: 'uploading', message: 'Fetching and analyzing data from API...' });
+      
+      const res = await fetch('http://localhost:8000/analyze/api', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiUrl: apiUrl }),
       });
-      if (!res.ok) throw new Error(`Upload failed with status: ${res.status}`);
+
+      if (!res.ok) throw new Error(`Analysis failed with status: ${res.status}`);
+      
       const payload = await res.json();
       setDashboardData(payload.dashboardData || null);
       setTrafficData(payload.trafficData || null);
@@ -182,7 +157,6 @@ export default function CSVAnalysis() {
 
   return (
     <Container fluid className="py-4">
-      {/* NEW: Full-screen loading overlay */}
       {status.type === 'uploading' && (
         <div style={overlayStyle}>
           <BounceLoader color={"#3b82f6"} loading={true} size={80} />
@@ -190,27 +164,43 @@ export default function CSVAnalysis() {
         </div>
       )}
 
-      {!file ? (
-        <div {...getRootProps({ style: isDragActive ? { ...baseStyle, ...activeStyle } : baseStyle })}>
-          <input {...getInputProps()} />
-          <p className="mb-0">Drag & drop a CSV file here, or click to select a file</p>
-          <small>Network Traffic Data Only</small>
-        </div>
+      {!isUrlSubmitted ? (
+        <Card>
+          <Card.Body>
+            <Card.Title>Provide API Link</Card.Title>
+            <Card.Text>Enter the full URL to the CSV data source you want to analyze.</Card.Text>
+            <Form onSubmit={handleUrlSubmit}>
+              <Form.Group controlId="apiUrlInput">
+                <Form.Label>API URL</Form.Label>
+                <Form.Control
+                  type="url"
+                  placeholder="https://example.com/data.csv"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrl(e.target.value)}
+                  required
+                />
+              </Form.Group>
+               {status.type === 'error' && (
+                <Alert className="mt-3 mb-0" variant="danger">{status.message}</Alert>
+              )}
+              <Button variant="primary" type="submit" className="mt-3">
+                Submit URL
+              </Button>
+            </Form>
+          </Card.Body>
+        </Card>
       ) : (
         <>
-          {/* MODIFIED: Restyled upload card */}
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
-                {/* File Info */}
                 <div>
-                  <Card.Title className="mb-1">File Selected</Card.Title>
-                  <p className="mb-0 text-muted">{file.name}</p>
+                  <Card.Title className="mb-1">API Link Submitted</Card.Title>
+                  <p className="mb-0 text-muted" style={{ wordBreak: 'break-all' }}>{apiUrl}</p>
                 </div>
-                {/* Action Buttons */}
                 <div className="d-flex gap-2">
                   <Button variant="outline-secondary" size="sm" onClick={resetAll}>
-                    Choose another file
+                    Change API Link
                   </Button>
                   <Button
                     variant="primary"
@@ -222,7 +212,6 @@ export default function CSVAnalysis() {
                 </div>
               </div>
 
-              {/* Status alerts are now placed below the actions for a cleaner look */}
               {status.type === 'error' && (
                 <Alert className="mt-3 mb-0" variant="danger">{status.message}</Alert>
               )}
@@ -231,6 +220,7 @@ export default function CSVAnalysis() {
               )}
             </Card.Body>
           </Card>
+
           {status.type === 'success' && dashboardData && (
             <>
               {/* Dashboard */}

@@ -6,10 +6,12 @@ import TrafficAnalysis from "./components/TrafficAnalysis";
 import BehaviourAnalysis from "./components/BehaviourAnalysis";
 import PacketAnalysis from "./components/PacketAnalysis";
 import CSVAnalysis from "./components/CSVAnalysis";
+import ApiAnalysis from "./components/ApiAnalysis";
 import Settings from "./components/Settings";
 import { BounceLoader } from "react-spinners";
 import './App.css';
 
+// const API_BASE_URL = 'http://10.140.251.181:8000';
 const API_BASE_URL = 'http://localhost:8000';
 
 function App() {
@@ -84,7 +86,7 @@ function App() {
       "2": <BehaviourAnalysis data={analysisData.behaviourData || {}} />,
       "3": <PacketAnalysis data={analysisData.packetData || {}}/>,
       "4": <CSVAnalysis />, 
-      "5": <Settings />,
+      "5": <ApiAnalysis />,
     };
     return tabComponents[selectedTab];
   };
