@@ -5,7 +5,7 @@ const COMMON_PORTS = {
 
 function transformPredictionData(rows) {
   if (!rows || rows.length === 0) {
-    return { dashboardData: {}, trafficData: {}, behaviourData: {}, packetData: {}, chartData: {}, rawData: [] };
+    return { dashboardData: {}, trafficData: {}, behaviourData: {}, packetData: {}, rawData: [] };
   }
 
   const getKey = (row, key_snake, key_pascal) => row[key_snake] ?? row[key_pascal];
@@ -83,18 +83,18 @@ function transformPredictionData(rows) {
     flagProfiles.URG.malicious += getKey(r, 'urg_flag_cnt', 'URG Flag Cnt') || 0;
   });
 
-  // --- 6. New: Transformations for Recharts data ---
+  // --- 6. Transformations for Recharts data ---
 
   // 6.1 Traffic Volume (AreaChart) - Megabytes by Hour
   function transformToTrafficVolume(rawData) {
     const timeMap = {};
     rawData.forEach(item => {
-      const date = new Date(item.timestamp);
+      // Use created_at if timestamp is null
+      const date = new Date(item.timestamp || item.created_at);
       const hour = date.getHours().toString().padStart(2, "0");
-      // Using hour:00 for granularity; can increase with minute if needed
       const timeStr = `${hour}:00`;
       const volumeBytes = (item.totlen_fwd_pkts || 0) + (item.totlen_bwd_pkts || 0);
-      const volumeMB = volumeBytes / (1024 * 1024); // Convert to Megabytes
+      const volumeMB = volumeBytes / (1024 * 1024);
       timeMap[timeStr] = (timeMap[timeStr] || 0) + volumeMB;
     });
     return Object.keys(timeMap).sort().map(time => ({
@@ -116,7 +116,7 @@ function transformPredictionData(rows) {
     });
     return Object.values(labelMap).map(item => ({
       name: item.name,
-      sent: parseFloat((item.sent / (1024 * 1024 * 1024)).toFixed(3)), // Convert bytes to Gigabytes
+      sent: parseFloat((item.sent / (1024 * 1024 * 1024)).toFixed(3)),
       received: parseFloat((item.received / (1024 * 1024 * 1024)).toFixed(3)),
     }));
   }
@@ -134,7 +134,61 @@ function transformPredictionData(rows) {
     });
     return Object.values(typeMap).map(item => ({
       name: item.name,
-      count: parseFloat((item.total / item.count).toFixed(2)),  // 'count' used for avg packet size on X axis
+      count: parseFloat((item.total / item.count).toFixed(2)),
+    }));
+  }
+
+  // **** NEW FUNCTION FOR THREATS OVER TIME ****
+  // 6.4 Threats over Time (SimpleLineChart) - Binned into 6 intervals
+  function transformToThreatsOverTime(maliciousData) {
+    if (maliciousData.length < 2) {
+      // Not enough data for a meaningful time range
+      return [{ time: new Date().toLocaleTimeString(), threats: maliciousData.length }];
+    }
+
+    // 1. Find the min and max dates from the 'created_at' field
+    const dateRange = maliciousData.reduce((acc, row) => {
+      const currentDate = new Date(row.created_at);
+      if (currentDate < acc.min) acc.min = currentDate;
+      if (currentDate > acc.max) acc.max = currentDate;
+      return acc;
+    }, { min: new Date(maliciousData[0].created_at), max: new Date(maliciousData[0].created_at) });
+
+    const { min: minDate, max: maxDate } = dateRange;
+    const totalDuration = maxDate.getTime() - minDate.getTime();
+    
+    // If all timestamps are the same, return a single point
+    if (totalDuration === 0) {
+        return [{ time: minDate.toLocaleTimeString(), threats: maliciousData.length }];
+    }
+
+    const numIntervals = 6;
+    const intervalSize = totalDuration / numIntervals;
+
+    // 2. Create the time intervals (bins)
+    const intervals = [];
+    for (let i = 1; i <= numIntervals; i++) {
+      intervals.push({
+        endTime: new Date(minDate.getTime() + i * intervalSize),
+        threats: 0,
+      });
+    }
+
+    // 3. Place each malicious row into the correct time interval
+    maliciousData.forEach(row => {
+      const rowDate = new Date(row.created_at);
+      for (const interval of intervals) {
+        if (rowDate <= interval.endTime) {
+          interval.threats++;
+          break; // Exit loop once the correct interval is found
+        }
+      }
+    });
+
+    // 4. Format the result for the chart
+    return intervals.map(interval => ({
+      time: interval.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      threats: interval.threats,
     }));
   }
 
@@ -147,7 +201,8 @@ function transformPredictionData(rows) {
         .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
         .map(([port, count]) => ({ name: `Port ${port} (${COMMON_PORTS[port] || 'Unknown'})`, count })),
-      threatsOverTime: [{ time: new Date().toLocaleTimeString(), threats: maliciousRows.length }],
+      // **** MODIFIED LINE ****
+      threatsOverTime: transformToThreatsOverTime(maliciousRows),
     },
     trafficData: {
       protocolBreakdown: Object.entries(protocolBreakdown).map(([name, value]) => ({ name, value })),
@@ -166,6 +221,7 @@ function transformPredictionData(rows) {
       flagProfiles: Object.entries(flagProfiles).map(([flag, values]) => ({ flag, ...values })),
       avgPacketSize: transformToAvgPacketSize(rows),
     },
+    rawData: rows[0]
   };
 }
 
